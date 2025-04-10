@@ -1,0 +1,64 @@
+// suppress inspection "SpellCheckingInspection" for whole file
+= Rollback after HDFS downgrade.
+:page-author: Anton Monakov
+:page-htmltitle: Rollback after HDFS downgrade
+:description: Learn how to perform a rollback after HDFS downgrade
+
+If you will be performing an HDFS downgrade, then you'll need to follow these instructions regardless of whether ZooKeeper goes through rollback, downgrade, or reinstallation.
+
+== Requirements
+
+* Ability to downgrade HDFS.
+* Pre-upgrade cluster must be able to run MapReduce jobs.
+* HDFS super user access.
+* Sufficient space in HDFS for at least two copies of the HBase data directory.
+
+== Performing a Rollback
+
+Perform a downgrade for HDFS, ZooKeeper and HBase.
+
+. Stop HBase.
+. Change the installed version of HBase to the previous version.
+
+Restore the HBase data directory from prior to the upgrade as the HDFS super user (shown below on a security enabled cluster). If you backed up your data on another HDFS cluster instead of locally, use the `distcp` command to copy it back to the current HDFS cluster.
+
++
+[source,shell]
+----
+$ kinit -k -t hdfs.keytab hdfs@EXAMPLE.COM
+$ hdfs dfs -mv /hbase /hbase-upgrade-rollback
+$ hdfs dfs -mv /hbase-pre-upgrade-backup /hbase
+----
+
+. Clean out ZooKeeper information related to HBase. 
+
++
+.CAUTION
+[CAUTION]
+====
+This step will permanently destroy all replication peers. Please see the section on HBase Replication under Caveats for more information.
+====
+
++
+[source,shell]
+----
+$ zookeeper-client -server \
+    zookeeper1.example.com:2181,\
+    zookeeper2.example.com:2181,\
+    zookeeper3.example.com:2181
+----
+
++
+The output should look as follows:
+
++
+....
+Welcome to ZooKeeper!
+JLine support is disabled
+rmr /hbase
+quit
+Quitting...
+....
+
+. Start HBase.
+. Verify HBase contents: use the HBase shell to list tables and scan some known values.
