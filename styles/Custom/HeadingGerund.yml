@@ -1,7 +1,7 @@
 extends: existence
 message: "Don't start headings with a gerund"
 nonword: true
-level: warning
+level: error
 scope: heading
 tokens:
   - '^\b\w+ing\b\s.*'
